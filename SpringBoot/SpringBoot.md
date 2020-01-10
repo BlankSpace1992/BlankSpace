@@ -63,6 +63,41 @@ SpringFactoriesLoader属于Spring框架私有的一种扩展方案,，其主要�
 * @ConditionalOnWebApplication ： Web应用环境下起效
 * @ConditionalOnNotWebApplication ： 非Web应用环境下起效
 在Spring里面，可以很方便的编写自己的条件类，所要做的就是实现Condition接口并覆盖matches()方法即可
-                                                                                                                                                        
-
-
+## IOC容器
+负责管理对象，包括创建对象，发布对象，销毁对象等生命周期，查询对象的依赖关系，注入依赖对象  
+BeanDefinition承担IOC容器管理各个业务对象以及它们之间的依赖关系，需要通过某种途径来记录管理关系。每一个Bean都会有一个对应的BeanDefinition实例，负责保存Bean对象的所有信息。包括bean对象的class类型，是否是抽象类型，构造方法，参数，其他属性等等。当客户端向容器请求相应的对象，容器就会向客户端的客户端返回一个完整可用的Bean实例。  
+BeanDefinitionRegistry(Bean定义登记)抽象出Bean的注册逻辑，而BeanFactory抽象生Bean的管理逻辑，各个BeanFactory的实现类就是具体承担Bean的注册以及管理。DefaultListableBeanFactory是一个比较通用的BeanFactory实现，它同时实现BeanDefinitionRegistry以及BeanFactory接口，所以展现了注册和管理的功能  
+BeanFactory主要包含了getBean，containBean，getType，getAliase等管理Bean的方法。而BeanDefinitionRegistry则包含了registerBeanDefinition，removeBeanDefinition,getBeanDefinition等注册管理BeanDefinition的方法。
+```
+ // 默认容器实现
+ DefaultListableBeanFactory beanRegistry=new DefaultListableBeanFactory();
+ // 根据业务对象构造对应的BeanDefinition
+ AbstractBeanDefinition definition=new RootBeanDefinition(Bussiness.class,true);
+ // 将Bean定义注册到容器中
+ beanRegistry.registerBeanDefinition("beanName",definition);
+ /*
+ 然后可以从容器中获取这个实例
+ 这里的BeanRegistry其实实现了BeanFactory接口，所以可以强转
+ 单纯的BeanDefinitionRegistry无法强转，这里的DefaultListableBeanFactory实现了BeanFactory，所以可以强转
+ */
+  BeanFactory beanFactory=(BeanFactory) beanRegistry;
+  Bussiness bussiness=beanFactory.getBean("beanName");
+```                                                                                                                                               
+## Spring IOC容器实现
+### 第一阶段
+容器启动时，会通过某种途径加载ConfigurationMetaData，在大部分情况下，容器需要依赖某些工具类，比如BeanDefinitionReader，此时BeanDefinitionReader会对加载的ConfigurationMetaData进行解析，并将分析后的信息组装为相应的BeanDefinition，最后把保存了bean定义的BeanDefinition注册到BeanDefinitionRegistry中
+```
+// 通常BeanDefinitionRegistry的实现类，这里以DefaultListableBeanFactory为例
+DefaultListableBeanFactory beanRegistry=new DefaultListableBeanFactory();
+// xmlBeanDefinitionReader 实现了BeanDefinitionRegistry接口
+XmlBeanDefinitionReader reader=new xmlBeanDefinitionReader(beanRegistry);
+// 加载xml文件
+reader.loadBeanDefinitions("classpath:spring-bean.xml");
+// 从容器中获取bean实例
+BeanFactory beanFactory=（BeanFactory） beanRegistry;
+Bussiness bussiness=beanFactory.getBean("beanName");
+```
+### 第二阶段
+经过第一个阶段，所有Bean定义都通过了BeanDefinition的方式注册到了BeanDefinitionRegistry，当某个请求通过容器的getBean方式去请求某个对象，或者因为依赖关系容器需要隐式调用getBean时，就会触发第二阶段。  
+容器首先会检查所请求的对象是否实例化完成，如果没有，则会根据注册的BeanDefinition实例化对象，并为其注入依赖，当该对象装配完毕后，将此对象返回给请求者。  
+BeanFactory只是Spring IOC容器的一种实现，如果没有特殊指定，它将采用延迟初始化策略：只有当访问容器中的一个对象，才对该对象进行初始化和依赖注入操作，而在实际操作中，使用的是另一种类型的场景：ApplicationContext，它构建在BeanFactory上，属于更高级的容器，除了具有BeanFactory的所有能力之外，还提供了事件监听制以及国际化支持。它管理的Bean，在容器启动时全部完成初始化和依赖注入的操作
