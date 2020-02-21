@@ -101,3 +101,154 @@ Bussiness bussiness=beanFactory.getBean("beanName");
 经过第一个阶段，所有Bean定义都通过了BeanDefinition的方式注册到了BeanDefinitionRegistry，当某个请求通过容器的getBean方式去请求某个对象，或者因为依赖关系容器需要隐式调用getBean时，就会触发第二阶段。  
 容器首先会检查所请求的对象是否实例化完成，如果没有，则会根据注册的BeanDefinition实例化对象，并为其注入依赖，当该对象装配完毕后，将此对象返回给请求者。  
 BeanFactory只是Spring IOC容器的一种实现，如果没有特殊指定，它将采用延迟初始化策略：只有当访问容器中的一个对象，才对该对象进行初始化和依赖注入操作，而在实际操作中，使用的是另一种类型的场景：ApplicationContext，它构建在BeanFactory上，属于更高级的容器，除了具有BeanFactory的所有能力之外，还提供了事件监听制以及国际化支持。它管理的Bean，在容器启动时全部完成初始化和依赖注入的操作
+## Spring Boot读取配置方式
+在application.yml或者properties文件中添加：
+```
+info.address=USA
+info.company=Spring
+info.degree=high
+```
+### @Value注解读取方式
+```
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+ 
+@Component
+public class InfoConfig1 {
+ 
+   @Value("${info.address}")
+   private String address;
+ 
+   @Value("${info.company}")
+   private String company;
+ 
+   @Value("${info.degree}")
+   private String degree;
+ 
+   public String getAddress() {
+       return address;
+   }
+ 
+   public void setAddress(String address) {
+       this.address = address;
+   }
+ 
+   public String getCompany() {
+       return company;
+   }
+ 
+   public void setCompany(String company) {
+       this.company = company;
+   }
+ 
+   public String getDegree() {
+       return degree;
+   }
+ 
+   public void setDegree(String degree) {
+       this.degree = degree;
+   }
+ 
+}
+```
+### @ConfigurationProperties注解读取方式
+```
+@Component
+@ConfigurationProperties(prefix = "info")
+public class InfoConfig2 {
+ 
+   private String address;
+   private String company;
+   private String degree;
+ 
+   public String getAddress() {
+       return address;
+   }
+ 
+   public void setAddress(String address) {
+       this.address = address;
+   }
+ 
+   public String getCompany() {
+       return company;
+   }
+ 
+   public void setCompany(String company) {
+       this.company = company;
+   }
+ 
+   public String getDegree() {
+       return degree;
+   }
+ 
+   public void setDegree(String degree) {
+       this.degree = degree;
+   }
+ 
+}
+```
+### 读取指定文件
+资源目录下建立config/db-config.properties:
+```
+db.username=root
+db.password=123456
+```
+#### @PropertySource+@Value注解读取方式
+```
+@Component
+@PropertySource(value = { "config/db-config.properties" })
+public class DBConfig1 {
+ 
+   @Value("${db.username}")
+   private String username;
+ 
+   @Value("${db.password}")
+   private String password;
+ 
+   public String getUsername() {
+       return username;
+   }
+ 
+   public void setUsername(String username) {
+       this.username = username;
+   }
+ 
+   public String getPassword() {
+       return password;
+   }
+ 
+   public void setPassword(String password) {
+       this.password = password;
+   }
+ 
+}
+```
+注意：@PropertySource不支持yml文件读取
+#### @PropertySource+@ConfigurationProperties注解读取方式
+```
+@Component
+@ConfigurationProperties(prefix = "db")
+@PropertySource(value = { "config/db-config.properties" })
+public class DBConfig2 {
+ 
+   private String username;
+   private String password;
+ 
+   public String getUsername() {
+       return username;
+   }
+ 
+   public void setUsername(String username) {
+       this.username = username;
+   }
+ 
+   public String getPassword() {
+       return password;
+   }
+ 
+   public void setPassword(String password) {
+       this.password = password;
+   }
+ 
+}
+```
