@@ -175,3 +175,87 @@ Java采用**缓存机制**:
 
 在 JDK 1.4 中新加入 NIO (New Input/Output) 类，引入了一种基于通道(Channel)和缓存(Buffer)的 I/O 方式，它可以使用 Native 函数库直接分配堆外内存，然后通过一个存储在 Java 堆中的 DirectByteBuffer 对象作为这块内存的引用进行操作。可以避免在 Java 堆和 Native 堆中来回的数据耗时操作  
 **OutOfMemoryError**：会受到本机内存限制，如果内存区域总和大于物理内存限制从而导致动态扩展时出现该异常
+
+## 对象已死吗
+程序计数器、虚拟机栈、本地方法栈 3 个区域随线程生灭(因为是线程私有)，栈中的栈帧随着方法的进入和退出而有条不紊地执行着出栈和入栈操作。而 Java 堆和方法区则不一样，一个接口中的多个实现类需要的内存可能不一样，一个方法中的多个分支需要的内存也可能不一样，我们只有在程序处于运行期才知道那些对象会创建，这部分内存的分配和回收都是动态的，垃圾回收期所关注的就是这部分内存
+### 引用计数法
+给对象添加一个引用计数器,每当有一个地方引用它时,计数器就会加1,当引用失效的时候,计数器减1,任何时候计数器的值为0的对象表示不可能在被使用.
+**给对象添加一个引用计数器。但是难以解决循环引用问题**  
+![引用计数法](image/5.jpg)
+### 可达性分析法
+通过一系列的称为"GC Roots"的对象作为起点,从这些节点开始往下搜索,搜索所走过的路径成为引用链(Reference Chain),当一个对象到GC Roots没有任何引用链相连时,则证明对象不可用  
+![可达性分析法](image/6.jpg) 
+**可作为 GC Roots 的对象：**
+    
+    1.虚拟机栈(栈帧中的本地变量表)中引用的对象
+    2.方法区中类静态属性引用的对象
+    3.方法区中常量引用的对象
+    4.本地方法栈中 JNI(即一般说的 Native 方法) 引用的对象
+    
+ ### 生存还是死亡
+ 即使在可达性分析算法中不可达的对象，也并非是判定为死亡的，这时候它们暂时出于"缓刑"阶段，一个对象的真正死亡至少要经历两次标记过程：如果对象在进行中可达性分析后发现没有与 GC Roots 相连接的引用链，那他将会被第一次标记并且进行一次筛选，筛选条件是此对象是否有必要执行 finalize() 方法。当对象没有覆盖 finalize() 方法，或者 finalize() 方法已经被虚拟机调用过，虚拟机将这两种情况都视为"没有必要执行"  
+ 如果这个对象被判定为有必要执行 finalize() 方法，那么这个对象竟会放置在一个叫做 F-Queue 的队列中，并在稍后由一个由虚拟机自动建立的、低优先级的 Finalizer 线程去执行它。这里所谓的“执行”是指虚拟机会触发这个方法，并不承诺或等待他运行结束。finalize() 方法是对象逃脱死亡命运的最后一次机会，稍后 GC 将对 F-Queue 中的对象进行第二次小规模的标记，如果对象要在 finalize() 中成功拯救自己 —— 只要重新与引用链上的任何一个对象建立关联即可  
+**finalize() 方法只会被系统自动调用一次**
+>finalize()方法是Object类中提供的一个方法，在GC准备释放对象所占用的内存空间之前，它将首先调用finalize()方法
+>>与C++的析构函数（对象在清除之前析构函数会被调用）不同，在Java中，由于GC的自动回收机制，因而并不能保证finalize方法会被及时地执行（垃圾对象的回收时机具有不确定性），也不能保证它们会被执行(程序由始至终都未触发垃圾回收)
+
+**不调用GC**   
+```
+  public class Finalizer {
+  	@Override
+  	protected void finalize() throws Throwable {
+  		System.out.println("Finalizer-->finalize()");
+  	}
+  
+  	public static void main(String[] args) {
+  		Finalizer f = new Finalizer();
+  		f = null;
+  	}
+  }
+  //无输出
+```
+**调用GC**   
+```
+public class Finalizer {
+
+	@Override
+	protected void finalize() throws Throwable {
+		System.out.println("Finalizer-->finalize()");
+	}
+
+	public static void main(String[] args) {
+		Finalizer f = new Finalizer();
+		f = null;
+		
+		System.gc();//手动请求gc
+	}
+}
+//输出 Finalizer-->finalize()
+```
+>>>finalize()方法中一般用于释放非Java 资源（如打开的文件资源、数据库连接等）,或是调用非Java方法（native方法）时分配的内存（比如C语言的malloc()系列函数）
+>>>>首先，由于finalize()方法的调用时机具有不确定性，从一个对象变得不可到达开始，到finalize()方法被执行，所花费的时间这段时间是任意长的。我们并不能依赖finalize()方法能及时的回收占用的资源，可能出现的情况是在我们耗尽资源之前，gc却仍未触发，因而通常的做法是提供显示的close()方法供客户端手动调用。
+    另外，重写finalize()方法意味着延长了回收对象时需要进行更多的操作，从而延长了对象回收的时间
+## Tomcat 类加载机制
+[!Tomcat类加载机制](image/7.jpg)
+当tomcat启动时,会创建集中类加载器:
+### BootStrap 引导类加载器
+加载JVM启动所需的类，以及标准扩展类（位于jre/lib/ext下）  
+### System 系统类加载器
+加载tomcat启动的类，比如bootstrap.jar，通常在catalina.bat或者catalina.sh中指定。位于CATALINA_HOME/bin下    
+[!System 类加载器](image/8.jpg)
+### Common 通用类加载器
+加载tomcat使用以及应用通用的一些类，位于CATALINA_HOME/lib下，比如servlet-api.jar   
+[!Common 类加载器](image/9.jpg)
+### webapp 应用类加载
+每个应用在部署后，都会创建一个唯一的类加载器。该类加载器会加载位于 WEB-INF/lib下的jar文件中的class 和 WEB-INF/classes下的class文件  
+### 类加载顺序
+    1.使用bootstrap引导类加载器加载
+
+    2.使用system系统类加载器加载
+
+    3.使用应用类加载器在WEB-INF/classes中加载
+
+    4.使用应用类加载器在WEB-INF/lib中加载
+
+    5.使用common类加载器在CATALINA_HOME/lib中加载
+
