@@ -236,16 +236,16 @@ public class Finalizer {
 >>>>首先，由于finalize()方法的调用时机具有不确定性，从一个对象变得不可到达开始，到finalize()方法被执行，所花费的时间这段时间是任意长的。我们并不能依赖finalize()方法能及时的回收占用的资源，可能出现的情况是在我们耗尽资源之前，gc却仍未触发，因而通常的做法是提供显示的close()方法供客户端手动调用。
     另外，重写finalize()方法意味着延长了回收对象时需要进行更多的操作，从而延长了对象回收的时间
 ## Tomcat 类加载机制
-[!Tomcat类加载机制](image/7.jpg)
+![Tomcat类加载机制](image/7.jpg)
 当tomcat启动时,会创建集中类加载器:
 ### BootStrap 引导类加载器
 加载JVM启动所需的类，以及标准扩展类（位于jre/lib/ext下）  
 ### System 系统类加载器
 加载tomcat启动的类，比如bootstrap.jar，通常在catalina.bat或者catalina.sh中指定。位于CATALINA_HOME/bin下    
-[!System 类加载器](image/8.jpg)
+![System 类加载器](image/8.jpg)
 ### Common 通用类加载器
 加载tomcat使用以及应用通用的一些类，位于CATALINA_HOME/lib下，比如servlet-api.jar   
-[!Common 类加载器](image/9.jpg)
+![Common 类加载器](image/9.jpg)
 ### webapp 应用类加载
 每个应用在部署后，都会创建一个唯一的类加载器。该类加载器会加载位于 WEB-INF/lib下的jar文件中的class 和 WEB-INF/classes下的class文件  
 ### 类加载顺序
