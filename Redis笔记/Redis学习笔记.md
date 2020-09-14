@@ -21,9 +21,37 @@
  ### string类型
  作为常规的key-value缓存应用，主要是用于计数使用，例如微博数，粉丝数等  
  **注：一个键的最大值是512mb**
+ #### 基础命令
+ ##### 添加或修改数据
+  ```set key value```
+ ##### 获取数据
+ ```get key```  
+ ##### 删除数据
+ ```del key```
+ ##### 设置过期时间(默认单位为秒)
+ ```expire key second```
+ ##### 添加/修改多个数据
+ ```mset key1 value1 key2 value2...```
+ ##### 获取多个数据
+ ```mget key1 key2 ...```
  ### hash类型
  redis hash是一个string类型的field和value的映射表，hash特别适用于存储对象（因为对象可以包含多种属性）  
- 常用命令:hget hset hgetall  
+ #### 基础命令
+ ##### 添加/修改数据
+ ```hset key field value``` 
+ ##### 获取数据
+ ```
+hget key field 
+hgetall key
+```
+##### 删除数据
+```hdel key field [field2 ...]```
+##### 添加或删除多个数据
+```hmset key field1 value1 field2 value2 ...```
+##### 获取多个数据
+```hmget key field1 field2 ...```
+##### 获取hash表中是否存在指定的字段
+```hexists key field```
  **主要用来存储对象信息**  
  ### list类型
  list只是简单字符串列表，按照插入的顺序进行排序（由LinkedList内部实现），可以选择将一个链表插入到头部或者尾部  
