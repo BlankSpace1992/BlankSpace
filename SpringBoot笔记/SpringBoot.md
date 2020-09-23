@@ -1,5 +1,5 @@
 # SpringBoot笔记
-　如果要想在 Spring 之中整合 RabbitMQ、Kafka、ActiveMQ、MySQL、 Druid、Redis、Shiro，需要编写一堆堆的*.xml 配置文件； 所以在这样的一个大的历史背景下，很多人开始寻求更加简便的开发，而遗憾的是这种简便的开发没有被 JDK 所支持、没有 被 JavaEE 所支持，因为这些只是平台，平台能够提供的只是最原始的技术支持。这一时刻终于由于 Spring 框架的升级而得到了新 生，SpringBoot 的出现，改变了所有 Java 开发的困境，SpringBoot 的最终奉行的宗旨：废除掉所有复杂的开发，废除掉所有的配置文件，让开发变得更简单纯粹，核心：“零配置”
+　如果要想在 Spring 之中整合 RabbitMQ、Kafka、ActiveMQ、MySQL、 Druid、Redis、Shiro，需要编写一堆堆的*.xml 配置文件； 所以在这样的一个大的历史背景下，很多人开始寻求更加简便的开发，而遗憾的是这种简便的开发没有被 JDK 所支持、没有 被 JavaEE 所支持，因为这些只是平台，平台能够提供的只是最原始的技术支持。这一时刻终于由于 Spring 框架的升级而得到了新 生，SpringBoot 的出现，改变了所有 Java 开发的困境，SpringBoot 的最终奉行的宗旨：废除掉所有复杂的开发，废除掉所有的配置文件，让开发变得更简单纯粹，核心："零配置"
 ## SpringBoot特性
 * 快速创建项目，简化配置
 * 容器内嵌，独立运行，内嵌了tomcat
@@ -10,7 +10,7 @@
 ### 结构
 yml文件，树状结构  
 注意点：  
-1，原有的key，例如spring.jpa.properties.hibernate.dialect，按“.”分割，都变成树状的配置  
+1，原有的key，例如spring.jpa.properties.hibernate.dialect，按"."分割，都变成树状的配置  
 2，key后面的冒号，后面一定要跟一个空格  
 3，把原有的application.properties删掉。然后一定要执行一下  maven -X clean install  
 ### 优先级
